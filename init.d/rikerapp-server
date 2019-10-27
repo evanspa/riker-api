@@ -1,0 +1,40 @@
+#!/bin/sh
+
+RIKERAPP_SERVER_BIN="/home/fprest/documents/riker-app/scripts"
+RIKERAPP_USER="fprest"
+
+start() {
+  if [ -f $RIKERAPP_SERVER_BIN/start-rikerapp-server.sh ];
+  then
+      echo "Starting Riker App server"
+      /bin/su $RIKERAPP_USER $RIKERAPP_SERVER_BIN/start-rikerapp-server.sh
+  fi
+}
+
+stop() {
+    if [ -f $RIKERAPP_SERVER_BIN/stop-rikerapp-server.sh ];
+    then
+        echo "Stopping Riker App server"
+        /bin/su $RIKERAPP_USER $RIKERAPP_SERVER_BIN/stop-rikerapp-server.sh
+    fi
+}
+
+case "$1" in
+
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  restart|reload|force-reload)
+    stop
+    start
+    ;;
+  *)
+    echo "Usage: /etc/init.d/rikerapp-server {start|stop|reload|force-reload|restart}"
+    exit 1
+
+esac
+
+exit 0

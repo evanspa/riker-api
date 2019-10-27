@@ -1,0 +1,18 @@
+<html>
+  <body>
+    <p>An error occured attempting to process a <strong>customer refund</strong>.<p>
+    <p>Message: <strong>{{message}}</strong><p>
+    <p><strong>The refund will need to be processed manually from the Stipe dashboard.</strong>.  If the charge ID is not known, you will have to look it up manually.  This can happen if the user cancelled their account immediately after creating it, and the "charge.succeeded" webhook from Stripe didn't come in yet in time to issue the customer's refund.</p>
+    <p>Info:</p>
+    <ul>
+      <li><strong>User ID:&nbsp;</strong>{{user/id}}</li>
+      <li><strong>User email:&nbsp;</strong>{{user/email}}</li>
+      <li><strong>Stripe customer ID:&nbsp;</strong>{{user/stripe-customer-id}}</li>
+      <li><strong>Stripe charge ID:&nbsp;</strong>{{user/last-charge-id}}</li>
+      <li><strong>Refund amount:&nbsp;</strong>{{refund-amount}}</li>
+      <li><strong>Stripe error type:&nbsp;</strong>{{#stripe-result}}{{type}}</li>
+      <li><strong>Stripe error message:&nbsp;</strong>{{#stripe-result}}{{message}}</li>
+      <li><strong>Stripe error code:&nbsp;</strong>{{#stripe-result}}{{code}}</li>
+    </ul>
+  </body>
+</html>

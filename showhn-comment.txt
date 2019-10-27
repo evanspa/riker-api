@@ -1,0 +1,15 @@
+Show HN: A simple offline-first app to track your reps in the gym
+
+Developer here.  Thanks for checking out my app, Riker.  In case anyone is
+curious, the iOS app is native, written in Obj-C.  The Riker web app is written
+using React and Redux.  The REST API is written in Clojure and the backend is
+Postgres.
+
+Although there is also a fully functional web version of Riker, the app is
+preferred since it supports offline mode, provides Watch App and integrates with
+Apple's Health app.
+
+Will be happy to answer any questions.
+
+App Store link: https://itunes.apple.com/us/app/riker/id1196920730?mt=8
+Web link: https://www.rikerapp.com

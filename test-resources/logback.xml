@@ -1,0 +1,25 @@
+<!-- Logback configuration. See http://logback.qos.ch/manual/index.html -->
+<configuration scan="false" debug="true">
+
+  <appender name="RAPP-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${RIKERAPP_LOGS_DIR}/riker.log</file>
+    <append>true</append>
+    <!-- encoder defaults to ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- rollover daily -->
+      <fileNamePattern>${RIKERAPP_LOGS_ROLLOVER_DIR}/riker-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+      <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+        <maxFileSize>64 MB</maxFileSize>
+      </timeBasedFileNamingAndTriggeringPolicy>
+    </rollingPolicy>
+    <!-- "true" to safely log to the same file from multiple JVMs. Degrades performance! -->
+    <prudent>false</prudent>
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="RAPP-FILE" />
+  </root>
+</configuration>

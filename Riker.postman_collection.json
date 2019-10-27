@@ -1,0 +1,172 @@
+{
+	"info": {
+		"_postman_id": "b25aa8e2-ef90-4cd8-b875-70824c9e908a",
+		"name": "Riker",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Sign Up",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/vnd.riker.user-v0.0.1+json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/vnd.riker.user-v0.0.1+json;charset=UTF-8"
+					},
+					{
+						"key": "Accept-Charset",
+						"value": "UTF-8"
+					},
+					{
+						"key": "r-establish-session",
+						"value": "true"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"user/email\": \"p21@p.com\", \n  \"user/password\": \"p\" }"
+				},
+				"url": {
+					"raw": "http://dev.rikerapp.com/riker/d/users",
+					"protocol": "http",
+					"host": [
+						"dev",
+						"rikerapp",
+						"com"
+					],
+					"path": [
+						"riker",
+						"d",
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "b8a743b6-5348-46bd-b987-ccae51f42ef5",
+						"type": "text/javascript",
+						"exec": [
+							"pm.environment.set(\"rikerAuthToken\", postman.getResponseHeader(\"r-auth-token\"));",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/vnd.riker.user-v0.0.1+json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/vnd.riker.user-v0.0.1+json;charset=UTF-8"
+					},
+					{
+						"key": "Accept-Charset",
+						"value": "UTF-8"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"user/username-or-email\": \"p20@p.com\", \n  \"user/password\": \"p\" }"
+				},
+				"url": {
+					"raw": "http://dev.rikerapp.com/riker/d/login",
+					"protocol": "http",
+					"host": [
+						"dev",
+						"rikerapp",
+						"com"
+					],
+					"path": [
+						"riker",
+						"d",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Set",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "b8a743b6-5348-46bd-b987-ccae51f42ef5",
+						"type": "text/javascript",
+						"exec": [
+							"pm.environment.set(\"rikerAuthToken\", postman.getResponseHeader(\"r-auth-token\"));",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/vnd.riker.set-v0.0.1+json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/vnd.riker.set-v0.0.1+json;charset=UTF-8"
+					},
+					{
+						"key": "Accept-Charset",
+						"value": "UTF-8"
+					},
+					{
+						"key": "Authorization",
+						"value": "r-auth r-token='{{rikerAuthToken}}'"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n                \"set/ignore-time\": false,\n                \"set/movement-id\": 37,\n                \"set/weight-uom\": 0,\n                \"set/num-reps\": 3,\n                \"set/logged-at\": 1525871356000,\n                \"set/origination-device-id\": 3,\n                \"set/id\": 1574,\n                \"set/negatives\": false,\n                \"set/to-failure\": false,\n                \"set/weight\": 10,\n                \"set/movement-variant-id\": 1\n            }"
+				},
+				"url": {
+					"raw": "http://dev.rikerapp.com/riker/d/users/24/sets/1574",
+					"protocol": "http",
+					"host": [
+						"dev",
+						"rikerapp",
+						"com"
+					],
+					"path": [
+						"riker",
+						"d",
+						"users",
+						"24",
+						"sets",
+						"1574"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

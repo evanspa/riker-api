@@ -1,0 +1,11 @@
+<html>
+  <body>
+    <h3>Riker subscription payment failed.</h3>
+    <p>Unfortunately your most recent invoice payment for ${{ amount-in-usd }} was declined.</p>
+    <p>This could be due to a change in your card number or your card expiring, cancellation of your credit card, or the bank not recognizing the payment and taking action to prevent it.</p>
+    <p>Please update your payment information as soon as possible to prevent cancellation of your account.  You can update your payment info by logging in here:&nbsp;&nbsp;<a href="{{ payment-update-web-url }}">{{ payment-update-web-url }}</a>.</p>
+    <p>We will try again to process your invoice payment on <strong>{{ next-payment-attempt }}</strong>.</p>
+    <p>Regards,<br />
+    -The Riker team</p>
+  </body>
+</html>

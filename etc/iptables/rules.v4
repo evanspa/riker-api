@@ -1,0 +1,9 @@
+:INPUT DROP [27:2594]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [623:92454]
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 62851 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+COMMIT

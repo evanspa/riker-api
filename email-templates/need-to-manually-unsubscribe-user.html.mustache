@@ -1,0 +1,14 @@
+<html>
+  <body>
+    An error occured attempting to <strong>unsubscribe a user</strong>. Info:
+    <ul>
+      <li><strong>User ID:&nbsp;</strong>{{user/id}}</li>
+      <li><strong>User email:&nbsp;</strong>{{user/email}}</li>
+      <li><strong>Stripe customer ID:&nbsp;</strong>{{user/stripe-customer-id}}</li>
+      <li><strong>Refund amount:&nbsp;</strong>{{refund-amount}}</li>
+      <li><strong>Stripe error type:&nbsp;</strong>{{#stripe-result}}{{type}}</li>
+      <li><strong>Stripe error message:&nbsp;</strong>{{#stripe-result}}{{message}}</li>
+      <li><strong>Stripe error code:&nbsp;</strong>{{#stripe-result}}{{code}}</li>
+    </ul>
+  </body>
+</html>

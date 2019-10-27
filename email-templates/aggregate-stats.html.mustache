@@ -1,0 +1,15 @@
+<html>
+  <body>
+    <h3>Aggregate Riker stats, yo!</h3>
+    <ul>
+      <li><strong>Total users</strong>: &nbsp;&nbsp;<span style="color: blue">{{ total-users-count }}</span></li>
+      <li><strong>Trial period</strong>: &nbsp;&nbsp;<span style="color: green">{{ trial-period-count }}</span></li>
+      <li><strong>Trial period expired</strong>: &nbsp;&nbsp;<span style="color: red">{{ trial-period-expired-count }}</span></li>
+      <li><strong>Almost expired trial period</strong>: &nbsp;&nbsp;<span style="color: orange">{{ almost-expired-trial-count }}</span></li>
+      <li><strong>Paid enrollment good standing</strong>: &nbsp;&nbsp;<span style="color: green">{{ paid-enrollment-good-standing-count }}</span></li>
+      <li><strong>Paid enrollment suspended</strong>: &nbsp;&nbsp;<span style="color: orange">{{ paid-enrollment-suspended-count }}</span></li>
+      <li><strong>Paid enrollment cancelled</strong>: &nbsp;&nbsp;<span style="color: red">{{ paid-enrollment-cancelled-count }}</span></li>
+      <li><strong>Final payment attempt failed</strong>: &nbsp;&nbsp;<span style="color: red">{{ final-failed-payment-attempt-occurred-count }}</span></li>
+    </ul>
+  </body>
+</html>

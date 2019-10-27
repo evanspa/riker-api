@@ -1,0 +1,2 @@
+# Backup Riker PostgreSQL database monthly
+0 0 1 * * pg_dump riker > /home/fprest/Dropbox/Backups/fprest-server-postgresql/riker_postgresql_backup_$(date +\%Y\%m\%d\%H\%M\%S)

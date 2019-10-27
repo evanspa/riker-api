@@ -1,0 +1,15 @@
+################################################################################
+## Temporary nginx config to use to setup letsencrypt using certbot-auto
+################################################################################
+
+server {
+    set $letsencrypt_webroot '/home/fprest/documents/letsencrypt_webroot';
+
+    listen      80;
+    server_name www.rikerapp.com;
+
+    location /.well-known {
+        root $letsencrypt_webroot;
+        allow all;
+    }
+}

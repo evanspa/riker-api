@@ -1,0 +1,15 @@
+$ORIGIN rikerapp.com.
+$TTL 1800
+rikerapp.com. IN SOA ns1.digitalocean.com. hostmaster.rikerapp.com. 1471280979 10800 3600 604800 1800
+rikerapp.com. 1800 IN NS ns1.digitalocean.com.
+rikerapp.com. 1800 IN NS ns2.digitalocean.com.
+rikerapp.com. 1800 IN NS ns3.digitalocean.com.
+rikerapp.com. 1800 IN A 104.131.13.221
+www.rikerapp.com. 1800 IN CNAME rikerapp.com.
+zb14709338.rikerapp.com. 1800 IN CNAME zmverify.zoho.com.
+rikerapp.com. 1800 IN MX 10 mx.zoho.com.
+rikerapp.com. 1800 IN MX 20 mx2.zoho.com.
+rikerapp.com. 1800 IN TXT "v=spf1 a:rikerapp.com include:zoho.com ~all"
+rikerapp.com. 1800 IN TXT google-site-verification=OYavcNKQ2siUZLhIkYf2-q60MqtnCeczqeLD7mWMDNI
+mail._domainkey.rikerapp.com. 1800 IN TXT "v=DKIM1; k=rsa;
+p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCnkci0YYdvV+ecituOMlz1gsbYDv4zO97Y97B2Mj1UdofKK47+Tv26+AmX+leasY0kZJsjzry9RFIykh9M1GBcOk4IIot7l0BB/howpSmI1yZJgUr6rZM/apvbANqvSwOIKVsAUMh7X/7wFNAnV6xOLDwbiQyPAAn0uN2r28AmsQIDAQAB"

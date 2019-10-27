@@ -1,0 +1,5 @@
+check process rikerapp-server with pidfile /home/fprest/run/rikerapp-server.pid
+    start program = "/etc/init.d/rikerapp-server start" with timeout 60 seconds
+    stop program  = "/etc/init.d/rikerapp-server stop"
+    if cpu > 60% for 2 cycles then alert
+    if cpu > 80% for 5 cycles then restart

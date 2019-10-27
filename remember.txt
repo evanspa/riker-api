@@ -1,0 +1,468 @@
+--------------------------------------------------------------------------------
+Riker Subscription Plan Price Data Sources
+--------------------------------------------------------------------------------
++ Um, so, unfortunately no single source of truth for the current plan price.
++ Data sources are:
+  - iTunes Connect
+  - gulpfile.js
+  - current_subscription_plan_info postgres table
+  - Stripe
++ More specifically, primary data sources: iTunes Connect and Stripe, secondary
+data sources: current_subscription_plan_info table and gulpfile
++ Ouch!
++ In iOS app, the current plan price is ALWAYS fetched from iTunes Connect
+before displaying it on the screen.  Win.
++ In website, while unauthenticated, the current plan price comes as constant
+injected during build by Gulp.  However, when user decides to enroll and does
+an account synchronization, the current plan price will be reflected in the user
+object at key: user/current-plan-price.  The source of this value comes from the
+current_subscription_plan_info postgres table.  This way, although it's possible
+(yet unlikely) the user may see stale price information in the unauth web pages, when
+they go to actually enroll, the price info displayed is guaranteed to be the
+latest (assuming you keep the primary data sources in sync).  So, in the website,
+you should do a check after they sync-before-enroll, and see if
+user/current-plan-price differs from the in-JS constant, and if it does, give an
+apology message to the user or something.  When doing a price change (a rare
+event), you'll need to do a new build of the JS (after of course you've updated
+the new price in the gulpfile build file), deploy it, and tell Cloudflare to
+expire the cache.  That way the static pages will reflect the new price when
+users reload the web pages.
++ In Android app, will need to do something similar to what iOS app is doing.
++ The iOS and Android apps will never use the user/current-plan-price value;
+this is because they will always be hitting the primary data sources directly
+for price info (iTunes for iOS, ? for Android).
++ My guess is that Android Pay and Samsung Pay don't offer auto-renew
+subscription capabilities; if right, then Android will use Stripe as primary
+data source.
++ current_subscription_plan_info table and gulpfile config can really be thought
+of as caches for the primary data source.  When Android wants to display price
+info, it has to hit my API endpoint (it cannot hit Stripe directly like the iOS
+app can for iTunes Connect; I don't trust embedding my Stripe API token into my
+Android app); so Android will hit my endpoint; my endpiont can either fetch the
+price from the local current_subscription_plan_info table, or, it can in turn
+make an API call to Stripe to fetch the plan info.  Well, my choice is to hit
+the current_subscription_plan_info table because, it is effectively guaranteed
+to reflect the true price as stored in Stripe.  This is because price changes
+will be very rare, and when I do them, I will definitely make sure that the
+current_subscription_plan_info table is updated simultaneously as Stripe is
+updated.  So, no need to expend the extra effort and processing time for my API
+to go to Stripe to fetch the plan price-info.
++ Also, configure Cloudflare so that the unauthenticated API endpoint for
+fetching the current plan price is under Cloudflare-caching.  This will also
+minimze unauthenticated hits to my API.  When doing a price change, you just
+need to make sure you also invalidate the Cloudflare cache (which you know you
+need to do anyway because of the price being in the JS as a constant for the
+unauthenticated parts of the website).
+
+--------------------------------------------------------------------------------
+Local machine SSH setup
+--------------------------------------------------------------------------------
+In ~/.ssh/config, put entry:
+
+Host rikerapp
+     HostName rikerapp.com
+     User fprest
+     Port 62851
+     IdentityFile ~/.ssh/id_rsa
+
+Make sure you append the contents of ~/.ssh/id_rsa.pub to server's
+~/.ssh/authorized_keys file.
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Administrative Postgres stuff
+--------------------------------------------------------------------------------
+To do any admin stuff to postgres, you need to use:
+sudo -u postgres psql
+--------------------------------------------------------------------------------
+If adding a new postgres user, "riker", you do:
+bash>sudo adduser riker // create Ubuntu user (for postgresl peer authentication)
+bash>sudo -u postgres pqsl
+psql>create user riker
+psql>alter user riker with password "new_password"; // to give user explicit password which is used by your riker-app to authenticate
+psql>grant all privileges on all tables in schema public to <NEW_USER>; // so they can see/edit the schema_version table
+
+--------------------------------------------------------------------------------
+To edit fprest's crontab, use:
+--------------------------------------------------------------------------------
+crontab -u fprest -e  (this will launch nano text editor to edit cron jobs)
+
+To list existing cron jobs, use:
+crontab -u fprest -l
+--------------------------------------------------------------------------------
+
+To 'install' an init.d service, use:
+sudo update-rc.d <service-name> defaults
+
+This assumes <service-name> script is currently residing in /etc/init.d
+
+To 'remove' the service, do:
+sudo update-rc.d <service-name> remove
+
+I don't believe this physically deletes the <script-name> script in
+/etc/init.d.  You have to do this manually.
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+To install system updates, do the following:
+--------------------------------------------------------------------------------
+sudo apt-get update
+sudo apt-get -y upgrade
+sudo apt-get -y dist-upgrade
+sudo apt-get autoremove
+sudo reboot
+--------------------------------------------------------------------------------
+To safely restart your system, do it from the command-line as:
+sudo shutdown -r now
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+How to restore backup database to local machine (for testing, re-producing bugs,
+etc)
+--------------------------------------------------------------------------------
+On local machine, do:
+
+1. bash>createuser riker
+2. bash>createdb riker --owner=riker
+3. bash>psql -U riker -d riker -f <BACKUP_FILE>
+
+If you wnat to blow away an existing riker database (to start from scratch),
+first do:
+
+1. bash>dropdb riker
+
+Then do above steps 2-3.
+
+############################################################
+## DEPRECATED ##############################################
+############################################################
+   1. bash>psql postgres
+   2. psql>drop database riker;
+   3. psql>create database riker;
+   4. psql>\q
+   5. bash>createuser riker
+   6. bash>psql -U postgres -d riker -f <BACKUP_FILE>
+############################################################
+
+Then, to log into your local postgres database to check things out, do:
+
+bash>psql -U postgres riker
+
+Assuming you're going to start the riker-app server via a REPL, before you do,
+go into dev/user.clj and comment-out the drop-database and create-database lines
+in 'go-with-db-refresh' function.  That way, when you do a '(reset 1)' to start
+the server, you won't lose the database you just restored from the psql dump
+file.
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+NGINX setup / config
+--------------------------------------------------------------------------------
+Local machine nginx setup:
+  + brew install nginx
+  + if you want nginx to listen on port 80 and have nginx start on machine-startup:
+    - sudo copy the homebrew.mxcl.nginx.plist file to /Library/LaunchDaemons
+    - do: sudo launchctl load -w /Library/LaunchDaemons/homebrew.mxcl.nginx.plist
+  + NGINX configuration file: /usr/local/etc/nginx/servers/www.rikerapp.com
+  (fyi, the 'server_name' is set to "dev.rikerapp.com")
+  + NGINX production server access log: /var/log/nginx/access.log
+  + I followed this gist for the local SSL / nginx setup: https://gist.github.com/jessedearing/2351836
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+riker-ios / getting iOS simulator to trust SSL cert on dev.rikerapp.com (when
+not-trusted, HTTPS calls were failing with -1021 code):
+--------------------------------------------------------------------------------
++ You need to drag-n-drop onto the simulator your crt file (which, as of this
+writing, is in riker-web/local-ssl/ssl/server.crt). Follow all the "continue"
+and "done" prompts you get.
++ Next, drag-n-drop the rootCA.pem file onto the simulator.  When done, go into
+the simulator's Settings app -> General -> About -> Certificate Trust Settings
+and toggle on Enable Full Trust for Root Certs (you should see dev.rikerapp.com
+as a root cert installed).
++ Restart the simulator.
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+riker-web setup / config
+--------------------------------------------------------------------------------
++ When installing node using apt-get, the executable will be "/usr/bin/nodejs".
+You will first want to create a symlink:
+
+   sudo ln -s /usr/bin/nodejs /usr/bin/node
+
++ node comes with npm, but you'll want to update npm using:
+
+   sudo npm install npm -g
+
+Initial PM2 Setup:
+---------------------
++ See pm2 website for how to install (it's easy)
++ cd into ~/documents/riker-web
++ pm2 start ./dist/server/server.js
++ pm2 save
++ pm2 startup ubuntu -u fprest
++ (then execute the resulting command that it says to using sudo)
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Lets Encrypt Setup with NGINX for PROD deployment
+--------------------------------------------------------------------------------
+1. Get HTTP-only nginx config up and running on server (i.e.,
+exclude/comment-out any ssl/443 server blocks)
+   a. Make sure your HTTP config contains the "location /.well-known" block
+   b. Upload nginx config file to somewhere (e.g., /home/fprest/documents/my-app/nginx/www.myapp.com)
+   c. in /etc/nginx/sites-available, create symbol link to file (sudo cd /etc/nginx/sites-available && sudo ln -s /home/fprest/documents/my-app/nginx/www.myapp.com)
+   d. in /etc/nginx/sites-enabled, create symbolic link: (sudo cd /etc/nginx/sites-enabled && sudo ln -s /etc/nginx/sites-available/www.myapp.com)
+   e. Reload nginx, make sure it comes up (sudo service nginx reload)
+2. Run certbot-auto:
+   a. cd ~
+   b. ./certbot-auto certonly --webroot -w /home/fprest/documents/letsencrypt_webroot -d www.myapp.com
+   c. should get success message
+
+Basically I followed the following 2 tutorials:
+
++ https://certbot.eff.org/#ubuntutrusty-nginx (mostly this one!)
++ https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-14-04
+
+You can check lets encrypt logs at: /var/log/letsencrypt
+
+My SSL cert files are located at: /etc/letsencrypt/live/www.rikerapp.com
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Steps for creating private key and cert for local NGINX for dev/testing
+--------------------------------------------------------------------------------
+$ cd <some_dir>
+$ openssl genrsa -des3 -passout pass:x -out server.pass.key 2048
+$ openssl rsa -passin pass:x -in server.pass.key -out server.key
+$ rm server.pass.key
+$ openssl req -new -key server.key -out server.csr
+
+Then, put these entries into your NGINX
+--------------------------------------------------------------------------------
+ssl                       on;
+ssl_certificate           <some_dir>/server.crt;
+ssl_certificate_key       <some_dir>/server.key;
+ssl_session_timeout       5m;
+ssl_protocols             SSLv3 TLSv1 TLSv1.1 TLSv1.2;
+ssl_ciphers               "HIGH:!aNULL:!MD5 or HIGH:!aNULL:!MD5:!3DES";
+ssl_prefer_server_ciphers on;
+--------------------------------------------------------------------------------
+p
+
+--------------------------------------------------------------------------------
+cron - here are your cron jobs for user 'fprest' as of 08/11/2016:
+--------------------------------------------------------------------------------
+# Backup Postgresql database on the first of each month at 12:00am
+0 0 1 * * pg_dump fp > /home/fprest/Dropbox/Backups/fprest-server-postgresql/fp_postgresql_backup_$(date +\%Y\%m\%d\%H\%M\%S)
+0 0 1 * * pg_dump riker > /home/fprest/Dropbox/Backups/fprest-server-postgresql/riker_postgresql_backup_$(date +\%Y\%m\%d\%H\%M\%S)
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+cron - here are newly-added system-wide cron jobs (in /etc/crontab)
+--------------------------------------------------------------------------------
+# Lets Encrypt auto-renew script (they say to have it run twice per month; the 5th and 20th at 2:30 am)
+30 2 5,20 * * root /home/fprest/certbot-auto renew --quiet --no-self-upgrade
+# Reload nginx at 2:40am so that it uses the new certs
+40 2 5,20 * * root /etc/init.d/nginx reload
+
+You can check lets encrypt logs at: /var/log/letsencrypt
+To check your Lets Encrypt certificate via the browser, point your browser to:
+https://ssh.rikerapp.com/, and check the certificate info.  (You can't point
+your browser to https://www.rikerapp.com, because that'll return your Cloudflare
+certificate [which will always be valid]).
+
+--------------------------------------------------------------------------------
+On a new box, in order to su as root, you first need to enable the root account by setting a password for it:
+--------------------------------------------------------------------------------
+sudo passwd root
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Email Setup
+--------------------------------------------------------------------------------
+I noticed that SPF was not enough to prevent mail sent by riker-app not to be
+marked as spam.  So I followed this guide to successfully configure DKIM:
+
+https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-dkim-with-postfix-on-debian-wheezy
+
+To test whether your SPF and DKIM is configured correctly, you can send an email
+to check-auth@verifier.port25.com.  To do this using your clojure code, do the
+following:
+ssh into rikerapp
+>lein repl :connect 7889
+repl> (require '[clojurewerkz.mailer.core :as mailer])
+repl> (mailer/with-settings {:host "localhost"} (mailer/with-delivery-mode :smtp (mailer/deliver-email {:from "support@rikerapp.com" :to ["check-auth@verifier.port25.com"] :subject "spf test"} "new-signup-notification.html.mustache" {:user/name "joe"})))
+
+
+--------------------------------------------------------------------------------
+Monit
+--------------------------------------------------------------------------------
+Sometimes the monit service dies?  To start monit:
+>sudo service monit start
+
+Monit web dashboard:  https://www.rikerapp.com/monit/
+
+Monit web dashboard username: admin
+Password: <see keepass>
+
+Monit config file: /etc/monit/monitrc
+
+It's in this config file that you configure web dashboard username and password.
+
+To start/stop a monit controlled service:
+
+>sudo monit stop nginx
+>sudo monit start nginx
+
+>sudo monit stop rikerapp-server
+>sudo monit start rikerapp-server
+
+A good way to manage your services is to use the Monit web tool at:
+
+https://www.rikerapp.com/monit
+
+Make sure the monit service is running in order to access the web tool:
+
+sudo service monit start
+
+The username/password for the web tool is in your keepass db.
+
+FYI, even though the monit service may not be running, you can still use the
+command syntax above to stop/start monit-controlled services, like nginx.
+
+--------------------------------------------------------------------------------
+Useful SQL
+--------------------------------------------------------------------------------
+Manipulating some timestamp columns:
+
+  update user_account set trial_ends_at = now() + '30 days'::interval, updated_at = now() where id = 2;
+
+http://stackoverflow.com/questions/5914080/postgresql-timestamp-in-the-future
+
+--------------------------------------------------------------------------------
+IAP - How to test IAP subscription enrollment
+--------------------------------------------------------------------------------
++ Create sandbox user in Riker ZOHO mail system.
+john.smith.sandbox<#>@rikerapp.com
++ Log into iTunes connect, and create new sandbox user of the same name.
++ Log into sandbox user's zoho mail, and click apple ID verification link in
+received email.
++ Launch Riker iPhone app, create trial account using sandbox user email.
++ SSH into Riker server, get to a Postgres prompt, and do:
+psql>update user_account set app_store_receipt_validation_url = 'https://sandbox.itunes.apple.com/verifyReceipt' where email = <SAND_BOX_USER_EMAIL>
++ Tap through the enrollment flow, and test to make sure that the IAP functionality is working.
+
+--------------------------------------------------------------------------------
+IAP - How to test IAP subscription expiration
+--------------------------------------------------------------------------------
+FYI, it seems that when using a Sandbox user, it is not possible to access
+iTunes via the iPhone, so the subscription cannot be viewed/cancelled
+explicitly.  Instead, you just have to wait for the subscription to expire.  For
+1-year auto renewing subscriptions, a Sandbox user's subscription will
+auto-renew every hour, with a max of 6 renews.  So, after 6-hours, the Sandbox
+user's subscription will be in an expired state.
+https://developer.apple.com/library/content/documentation/LanguagesUtilities/Conceptual/iTunesConnectInAppPurchase_Guide/Chapters/TestingInAppPurchases.html
+
+When the sandbox user successfully completes the subscription sign-up using the
+IAP, we update the users record in the database.  We also have a column in the
+user account table: validate_app_store_receipt_at.  When IAP sign-up time, we
+set the value of this column to 1 month into the future.  Although our daily
+quartz job runs daily, it will only check those IAP users in which the
+validate_app_store_receipt_at date is today or earlier.  So, to test the
+expiration scenario, we have to do the following:
+
+1. Wait 6 hours
+2. Update rikerapp-server-template.sh and make sure the sandbox app store
+receipt validation url is enabled and that a build of riker-app with this config
+is deployed to server.
+3. SSH into Riker server, go into psql, and issue the following update
+statement:
+update user_account set validate_app_store_receipt_at = now() where email = 'john.smith.sandbox<#>@rikerapp.com'
+4. Now, the quartz run is configured to run at a weird time, so, we'll just
+manually launch the job at the repl.
+5. Launch repl like so: lein repl :connect 7889
+6. then do: (require 'riker-app.app.jobs)
+7. and then: (riker-app.app.jobs/validate-iap-subscriptions-job-fn)
+8. Now exit the repl.  cat the latest riker log file, and you should see output
+indicating the user's account has been cancelled (because the validation of
+their IAP receipt indicated an expired subscription)
+9. Go to Riker iphone app, and sync the user's account.  It should update and
+show in a cancelled state.
+
+--------------------------------------------------------------------------------
+Scheduling Releases / Maintenance Mode / Scheduled Outages
+--------------------------------------------------------------------------------
+1. If doing a release, plan a date to do the release.  Then, run the
+'schedule-maintenance.sh' script like so:
+
+bash>./schedule-maintenance.sh "2017-06-12 9:30:00 -5:00" "15"
+
+With this example, you are scheduling maitenance for June 12th, 2017 at 9:30 AM
+Eastern time, with a duration of 15 minutes.  This will write a single row to
+the maintenance_window table in the Riker database.  The next time an
+authenticated user takes some action against the REST API that returns a
+response, the response will carry this maintenance window information, and the
+client application will display an "upcoming maintenance" banner.
+
+2. Using the example above, on June 12th, 2017 at 9:30 AM, execute the following
+script:
+
+bash>./start-maintenance-now.sh
+
+This will configure nginx to return a 503 response, effectively putting Riker
+into "maintenance mode."
+
+3. You are now safe to do any release stuff, such as:
+bash> (in "riker-app" folder), "./release-rikerapp-server.sh 0.2.19"
+bash> (in "riker-web" folder), "./release 0.4.27"
+If you are making any changes to subscription pricing, be sure to read the
+pricing data structures section at the top of this page.
+
+4. When done with everything, take Riker out of maintenance mode by running:
+bash>./end-maintenance.sh
+This will configure nginx to work normally again.  You don't need to worry about
+the row in the "maintenance_window" table.  Once the duration has lapsed, the
+client apps will no longer display the banner.
+
+To test maintenance mode stuff locally, follow the above steps, but just use the
+"-dev.sh" version of the scripts.
+
+FYI, the following "flag files" are used by nginx to know if it should
+short-circuit and return 503s:
+
+On rikerapp server: /home/fprest/documents/maintenance-on
+
+On local machine: /Users/PEVANS/Documents/maintenance-on
+
+--------------------------------------------------------------------------------
+How to Create Riker Account for App Store Reviewer
+--------------------------------------------------------------------------------
+1. Create the email account in Zoho using "@rikerapp.com" suffix.  Use KeePass
+to generate an 8 character password (use no look-a-like option).  Store the
+chosen email/password in KeePass.
+2. Log into iTunes Connect, click and Users and Roles, and create the sandbox
+user.  Re-use the same password from step 1.
+3. Create the account in Riker using web or iPhone app.
+4. Sign into Zoho email account, and click the Riker validation link (we want the
+account to be a verified one, the reviewer can test IAP).  Also click on the
+"Verify your Apple ID" link in the email you would have got from Apple.
+5. Go to https://appleid.apple.com and sign-in using the new sandbox user
+account.  You'll be prompted to create 3 security questions.  Go ahead and do
+this and fully sign-in.  This should ensure that your sandbox account is fully
+good to go, and is ready to make IAP purchases.
+6. Run the script:
+bash>./mark-as-iap-sandbox-user.sh <EMAIL>
+This will update the user account record in production database to use the
+sandbox IAP receipt validation service.
+7. Log into Riker, and import desired sets and BMLs csv files.
