@@ -2,7 +2,7 @@
 
 Riker API is the web API and database portion of Riker; a set of apps that let you track your reps during your strength training workouts.  Riker API is developed in Clojure.
 
-_The Riker API no longer live. The Riker client applications used to be implemented as client/server apps communicating with the Riker API, but are now purely standalone iOS and Android apps._
+_The Riker API is no longer live. The Riker client applications used to be implemented as client/server apps communicating with the Riker API, but are now purely standalone iOS and Android apps._
 
 # Other Riker Repos
 
